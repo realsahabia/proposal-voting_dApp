@@ -2,7 +2,7 @@
 pragma solidity ^0.8.9;
 
 contract ProVoting {
-    
+
     struct Proposal {
         uint256 proposalId;
         string title;
@@ -12,8 +12,8 @@ contract ProVoting {
         uint256 noVotes;
     }
 
-    event ProposalAdded(unint256 _newProposalId, string _newProposalTitle);
-
+    event ProposalAdded(uint256 _newProposalId, string _newProposalTitle);
+    event VoteCasted(address indexed voter, uint256 indexed proposalId, bool vote);
 
     mapping(uint256 => mapping(address => bool)) private alreadyVoted; //Mapping of proposal IDs to whether an address has voted for that proposal
 
@@ -25,13 +25,13 @@ contract ProVoting {
         _;
     }
 
-    function  createProposal(string memory _title, string memory _description) 
+    function createProposal(string memory _title, string memory _description) 
         public
         nonEmptyString(_title)
         nonEmptyString(_description) {
         
         Proposal memory newProposal = Proposal({
-            id: uint256(proposals.length),
+            proposalId: proposals.length,
             title: _title,
             description: _description,
             voteCount: 0,
@@ -41,26 +41,27 @@ contract ProVoting {
 
         proposals.push(newProposal);
 
-        emit ProposalAdded(newProposal.id, newProposal.title);
+        emit ProposalAdded(newProposal.proposalId, newProposal.title);
     }
 
-    function Vote(uint256 _proposalId, bool _yesVote) public {
+    function vote(uint256 _proposalId, bool _yesVote) public {
         require(_proposalId < proposals.length, "Invalid proposal ID");
         require(
             !alreadyVoted[_proposalId][msg.sender],
             "You have already voted for this proposal"
-        )
+        );
 
-        if(_yesVote){
-            proposals[_proposalId].yesVotes +=1;
+        if (_yesVote){
+            proposals[_proposalId].yesVotes += 1;
         }
         else {
-            proposals[_proposalId].noVotesn +=1;
+            proposals[_proposalId].noVotes += 1;
         }
 
-        proposals[_proposalId].voteCount +=1;
+        proposals[_proposalId].voteCount += 1;
         alreadyVoted[_proposalId][msg.sender] = true;
 
+        emit VoteCasted(msg.sender, _proposalId, _yesVote);
     }
 
     function getProposalVotes(uint256 _proposalId)
